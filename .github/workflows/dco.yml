@@ -1,0 +1,120 @@
+# ============================================================================
+# dco.yml - Contributor sign-off check for AiTao
+#
+# Triggered on: every pull request.
+#
+# WHY THIS EXISTS
+#   AiTao Core is free software under the AGPL-3.0, while AiTao Premium Modules
+#   are sold under a commercial licence. A contribution offered under the AGPL
+#   alone may be used in Core — but it may NOT be included in a commercially
+#   licensed module. Its author keeps the copyright and can rightfully object,
+#   and untangling shared code months later is painful for everyone.
+#
+#   CONTRIBUTING.md therefore asks every contributor to certify the Developer
+#   Certificate of Origin plus one additional grant, by signing off each commit.
+#   This workflow is what makes that ask real rather than decorative.
+#
+#   It lives in the repository on purpose: it follows the code wherever the
+#   repository moves, unlike settings configured through the GitHub interface.
+#
+# WHAT IT CHECKS
+#   Every non-merge commit in the pull request carries a `Signed-off-by:` line
+#   whose email matches the commit author. Merge commits are exempt: GitHub
+#   creates them, the contributor does not.
+# ============================================================================
+
+name: DCO
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  sign-off:
+    name: Every commit is signed off
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check sign-off on each commit
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+
+          # --no-merges: a merge commit is created by GitHub, not by the contributor
+          COMMITS=$(git rev-list --no-merges "$BASE".."$HEAD")
+
+          if [ -z "$COMMITS" ]; then
+            echo "No non-merge commit in this pull request — nothing to check."
+            exit 0
+          fi
+
+          FAILED=0
+          for SHA in $COMMITS; do
+            AUTHOR_EMAIL=$(git show -s --format='%ae' "$SHA")
+            AUTHOR_NAME=$(git show -s --format='%an' "$SHA")
+            SUBJECT=$(git show -s --format='%s' "$SHA")
+
+            # Collect every Signed-off-by trailer, case-insensitively.
+            SIGNOFFS=$(git show -s --format='%B' "$SHA" \
+              | grep -i '^ *Signed-off-by:' || true)
+
+            if [ -z "$SIGNOFFS" ]; then
+              echo "::error::${SHA:0:8} \"$SUBJECT\" has no Signed-off-by line."
+              FAILED=1
+              continue
+            fi
+
+            # The sign-off must belong to the author, not to somebody else.
+            if ! echo "$SIGNOFFS" | grep -qiF "<$AUTHOR_EMAIL>"; then
+              echo "::error::${SHA:0:8} \"$SUBJECT\" is signed off, but not by its author ($AUTHOR_NAME <$AUTHOR_EMAIL>)."
+              FAILED=1
+              continue
+            fi
+
+            echo "ok  ${SHA:0:8}  $SUBJECT"
+          done
+
+          if [ "$FAILED" -ne 0 ]; then
+            cat <<'HELP'
+
+          ─────────────────────────────────────────────────────────────────────
+          Some commits are missing a sign-off.
+
+          Signing off certifies that you wrote the code (or have the right to
+          submit it), and that you allow it to be used in both AiTao Core and
+          commercially licensed AiTao products. You keep the copyright in your
+          contribution and your moral rights are unaffected — you grant a
+          licence, not a transfer. The full text is in CONTRIBUTING.md.
+
+          To sign off the commit you already made:
+
+              git commit --amend --signoff
+              git push --force-with-lease
+
+          For several commits at once:
+
+              git rebase --signoff origin/main
+              git push --force-with-lease
+
+          And from now on, add -s when you commit:
+
+              git commit -s -m "your message"
+
+          If you are not comfortable with these terms, say so in the pull
+          request — a bug report or a reproduction case is a valuable
+          contribution too, and needs no sign-off.
+          ─────────────────────────────────────────────────────────────────────
+          HELP
+            exit 1
+          fi
+
+          echo ""
+          echo "All commits are signed off."

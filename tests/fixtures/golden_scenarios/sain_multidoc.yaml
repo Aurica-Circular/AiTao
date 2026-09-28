@@ -1,0 +1,14 @@
+name: sain_multidoc
+description: >
+  Cas sain — un token présent dans 2 documents (billing@acme.example, dans
+  en_invoice.md ET en_receipt.md) doit déclencher la note multi-sources
+  déterministe (US-90-4), sans qu'aucun garde n'ait besoin d'un LLM.
+incident: ""
+phase: 0
+corpus: committed
+turns:
+  - user: "billing@acme.example"
+    expect:
+      context_contains: ["en_invoice", "en_receipt"]
+      refusal: false
+      multi_source_note: true

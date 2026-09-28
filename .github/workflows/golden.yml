@@ -1,0 +1,83 @@
+# Golden retrieval — non-regression suite (US-89 point (c); US-101 multi-turn).
+#
+# Replays a fixed set of multilingual "golden" questions/conversations against
+# a freshly indexed, committed fixture corpus (tests/fixtures/golden_corpus) in
+# ISOLATED stores, asserting deterministic retrieval + CJK anchoring + gate +
+# answer-validator behaviour (no LLM). Needs Meilisearch + the bge-m3 embedding
+# model, so it runs as a dedicated job, not in the fast release gate.
+#
+# Runs on main pushes and PRs (validated green on a first manual run). The bge-m3
+# model is cached across runs, so it stays a few-minutes job after the first.
+#
+# ÉPIC-31 (US-113): fusion is the only search engine since v4.0 (decision
+# D1) — the job used to run as a 2-way matrix (``rrf`` vs ``fusion``, via
+# APP__SEARCH__ENGINE) while both engines coexisted behind a dev-only flag
+# (US-110's GATE ABSOLU). That flag is gone; a single job now covers the
+# only engine there is. See EPIC-31-fusion-v4/CADRAGE.md, US-110/US-113.
+name: Golden retrieval
+
+on:
+  push:
+    branches: [main]
+    paths:  # only when retrieval/gate/validator, the corpus or the scenarios could change
+      - "src/llm/**"
+      - "src/search/**"
+      - "src/indexation/**"
+      - "tests/integration/test_golden_retrieval.py"
+      - "tests/integration/test_golden_conversations.py"
+      - "tests/golden/**"
+      - "tests/fixtures/golden_corpus/**"
+      - "tests/fixtures/golden_scenarios/**"
+      - ".github/workflows/golden.yml"
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  golden:
+    runs-on: ubuntu-latest
+    services:
+      meilisearch:
+        image: getmeili/meilisearch:v1.49.0
+        ports:
+          - 7700:7700
+        env:
+          MEILI_ENV: development          # no master key required for tests
+          MEILI_NO_ANALYTICS: "true"
+    env:
+      AITAO_BETA: "true"                  # unlock Premium (RAGEngine) without a key
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Cache HuggingFace models (bge-m3)
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: hf-bge-m3-v1
+
+      - name: Install dependencies
+        run: uv pip install --system -e ".[dev]"
+
+      - name: Provision a minimal config
+        run: cp config/config.toml.starter config/config.toml
+
+      - name: Wait for Meilisearch
+        run: |
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:7700/health && exit 0
+            sleep 2
+          done
+          echo "Meilisearch did not become healthy" && exit 1
+
+      - name: Golden retrieval suite
+        run: python -m pytest tests/integration/test_golden_retrieval.py -v
+
+      - name: Golden multi-turn conversation bench (US-101)
+        run: python -m pytest tests/integration/test_golden_conversations.py -v

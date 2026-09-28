@@ -1,0 +1,18 @@
+name: i11_live
+description: >
+  I-11 rejoué en direct sur le vrai stack de Phil, contre les vrais documents
+  百年淬鍊.pdf et le Baromètre ADFE (référencés ici par leur nom de fichier
+  uniquement, jamais leur contenu — voir ETUDE-FIABILITE.md §8). Pré-vol
+  manuel avant chaque release, pas un gate CI (nécessite le stack complet et
+  Phil).
+incident: I-11
+phase: 1
+corpus: live
+turns:
+  - user: "Quel document parle de 百年淬鍊 ?"
+    expect:
+      context_contains: ["百年淬鍊"]
+  - user: "Combien de pages contient-il ?"
+    expect:
+      referent_kept: "百年淬鍊"
+      context_excludes: ["Baromètre"]

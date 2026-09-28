@@ -1,0 +1,28 @@
+name: i15_stale_citation
+description: >
+  I-15 — après un changement de sujet, la récupération est CORRECTE (le
+  nouveau document est bien dans le contexte) mais la prose du rédacteur
+  attribue encore le fait au document du tour PRÉCÉDENT, recyclé de son
+  propre historique de chat. Ce document n'est plus dans le contexte : la
+  liaison extrait<->source de l'I-05 ne peut pas s'en saisir (elle ne
+  vérifie que les citations de documents PRÉSENTS dans le contexte), mais
+  le garde-fou anti-fabrication (G2) détecte bien que "zh_glass.md" est
+  absent des sources récupérées. La liaison "citation obsolète" (US-104
+  suite, I-15) va plus loin que l'avertissement générique de G2 : elle
+  identifie le document du contexte qui porte réellement le chiffre "1250"
+  (fr_bail.md) et le nomme dans un bandeau correctif.
+incident: I-15
+phase: 3
+corpus: committed
+turns:
+  - user: "Quel document parle de 範例玻璃 ?"
+    expect:
+      context_contains: ["zh_glass"]
+  - user: "Quel est le loyer mensuel du bail de Jean Dupont ?"
+    scripted_answer: >
+      D'après zh_glass.md, le loyer mensuel s'élève à 1250 EUR.
+    expect:
+      context_contains: ["fr_bail"]
+      context_excludes: ["zh_glass"]
+      banner: present
+      banner_contains: ["fr_bail"]

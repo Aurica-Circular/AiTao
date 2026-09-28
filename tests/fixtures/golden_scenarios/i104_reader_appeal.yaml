@@ -1,0 +1,30 @@
+name: i104_reader_appeal
+description: >
+  US-104 partie C — le lecteur de reponse s'appuie sur des règles
+  volontairement étroites (I-10) pour éviter les faux positifs habillage :
+  une phrase d'habillage qui ne suit pas exactement le motif ordinal +
+  vocabulaire structurel ("document numéro 47 dans la liste des résultats")
+  échappe aux règles et se fait signaler par la vérification déterministe
+  (le chiffre "47" n'existe pas dans le contexte). L'appel LLM (scripté ici,
+  exactement comme scripted_answer / intent_route : le vrai code de
+  parsing/décision tourne sur ce texte brut) tranche HABILLAGE et retire le
+  signalement — bandeau absent. Le tour suivant vérifie le sens inverse :
+  sans verdict scripté (llm_call=None), un signalement N'EST JAMAIS retiré
+  (fail-open, les deux sens).
+incident: US-104-C
+phase: 3
+corpus: committed
+turns:
+  - user: "Combien de documents parlent de 範例玻璃 ?"
+    scripted_answer: >
+      Il s'agit du document numéro 47 dans la liste des résultats.
+    reader_appeal: "1: HABILLAGE"
+    expect:
+      context_contains: ["zh_glass"]
+      banner: absent
+  - user: "Combien d'employés compte-t-il ?"
+    scripted_answer: >
+      L'entreprise compte environ 900 employés selon ce document.
+    expect:
+      referent_kept: "zh_glass"
+      banner: present

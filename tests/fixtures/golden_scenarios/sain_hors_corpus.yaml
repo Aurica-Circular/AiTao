@@ -1,0 +1,11 @@
+name: sain_hors_corpus
+description: >
+  Cas sain — terme absent du corpus : refus notaire honnête, jamais de
+  réponse inventée (mirroir du cas GOLDEN existant, US-89).
+incident: ""
+phase: 0
+corpus: committed
+turns:
+  - user: "粒米女性經理人聯誼會"
+    expect:
+      refusal: true

@@ -1,0 +1,56 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+# ...but src/core/lib is real source code, not a venv/build dir — keep it tracked
+!src/core/lib/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+.venv/
+venv/
+.env
+
+# VS Code
+.vscode/
+CLAUDE.md
+.claude/
+.archive_v1/
+
+
+# Project Specific
+config/config.toml
+config/config.yaml
+config/aitao-nginx.conf
+logs/
+data/
+*.log
+.DS_Store
+
+# Backlog archive (local only)
+prd/backlog-done.md
+
+# User Data (External mounts)
+_sources/
+.README.mdworker.py.bak
+
+# Tool caches (US-113 ménage)
+.pytest_cache/
+.ruff_cache/

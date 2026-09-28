@@ -1,0 +1,33 @@
+name: clarification_jamais_deux
+description: >
+  US-103 garde-fou "jamais deux tours de suite" (étude §6.5 : l'empathie ne
+  doit pas devenir du harcèlement). Même mise en place que
+  clarification_ambigu ; le tour 3 déclenche légitimement la question de
+  clarification. Le tour 4 est ambigu à nouveau (它的營業額 ancre zh_glass,
+  pas fr_bail) juste après cette question : le garde-fou — dérivé SANS état
+  serveur du marqueur ❓ ouvrant le dernier tour assistant de l'historique —
+  supprime toute deuxième question et le tour se traite normalement
+  (référent tenu, pas de refus).
+incident: ""
+phase: 2
+corpus: committed
+turns:
+  - user: "Quel document parle de 範例玻璃 ?"
+    expect:
+      context_contains: ["zh_glass"]
+      refusal: false
+      clarification: false
+  - user: "Quel est le loyer mensuel du bail de Jean Dupont ?"
+    expect:
+      context_contains: ["fr_bail"]
+      refusal: false
+      clarification: false
+  - user: "它的員工人數是多少？"
+    expect:
+      clarification: true
+      clarification_names: ["fr_bail", "zh_glass"]
+  - user: "它的營業額是多少？"
+    expect:
+      clarification: false
+      refusal: false
+      referent_kept: "fr_bail"

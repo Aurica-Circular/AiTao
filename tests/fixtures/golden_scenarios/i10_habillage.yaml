@@ -1,0 +1,18 @@
+name: i10_habillage
+description: >
+  I-10 — les deux faux positifs connus du bandeau : un ordinal d'habillage
+  ("le premier document du contexte") et un numéral chinois (百, "cent")
+  pris dans un nom propre plutôt qu'un vrai chiffre. Le lecteur de réponse
+  (US-104, phase 3) classe la 1ʳᵉ phrase "habillage" et la 2ᵉ "echo_metadata"
+  (elle répète le titre du document) — le bandeau reste muet sur les deux.
+incident: I-10
+phase: 3
+corpus: committed
+turns:
+  - user: "Quel document parle de 範例玻璃 ?"
+    scripted_answer: >
+      C'est le premier document du contexte.
+      Le fichier s'intitule 百年淬鍊：範例玻璃股份有限公司.
+    expect:
+      context_contains: ["zh_glass"]
+      banner: absent

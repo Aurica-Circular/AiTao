@@ -1,0 +1,28 @@
+name: refus_referent_absent
+description: >
+  US-103 issue 2 : refus notaire CIBLÉ sur preuve verbatim. En pleine
+  session, une question à sujet nouveau dont AUCUN token saillant
+  (politique / télétravail / Microsoft) n'apparaît dans aucun document
+  récupéré : le référent demandé n'existe pas dans le corpus. Piège réel du
+  pipeline : la 2e passe multi-tours (US-12) élargit la recherche avec le
+  tour 1 et ramène zh_glass — un contexte "fort" au score, hors-sujet pour
+  LA question ("garbage in, validated garbage out", étude §5 manque B). Le
+  gate doit refuser en NOMMANT ce qui manque, jamais sur un score, jamais en
+  laissant répondre depuis le mauvais document. (Calibré : le refus
+  "référent du dossier absent du contexte gagnant" pur est une défense en
+  profondeur que le pipeline normal ne peut pas produire — le dossier
+  épingle toujours son référent — il est couvert en test unitaire.)
+incident: ""
+phase: 2
+corpus: committed
+turns:
+  - user: "Quel document parle de 範例玻璃 ?"
+    expect:
+      context_contains: ["zh_glass"]
+      refusal: false
+      clarification: false
+  - user: "Quelle est la politique de télétravail en vigueur chez Microsoft ?"
+    expect:
+      refusal: true
+      refusal_contains: ["télétravail", "Microsoft"]
+      clarification: false

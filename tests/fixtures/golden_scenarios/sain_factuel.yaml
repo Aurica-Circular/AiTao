@@ -1,0 +1,17 @@
+name: sain_factuel
+description: >
+  Cas sain — question factuelle simple, un seul document pertinent, réponse
+  scriptée fidèle : bon document cité, aucun bandeau.
+incident: ""
+phase: 0
+corpus: committed
+turns:
+  - user: "Quel est le montant total dû sur la facture fournisseur INV-2026-0042 ?"
+    scripted_answer: >
+      Le montant total dû est de 4200 USD, selon la facture en_invoice.md
+      (référence INV-2026-0042).
+    expect:
+      context_contains: ["en_invoice"]
+      refusal: false
+      banner: absent
+      cited_source: "en_invoice"

@@ -1,0 +1,16 @@
+name: question_generale_live
+description: >
+  I-16 rejoué en direct sur le vrai stack de Phil : une question de calcul pur
+  ne doit JAMAIS déclencher de recherche documentaire, et la réponse doit
+  porter le bandeau ℹ️ honnête. Pré-vol manuel avant chaque release (comme
+  i11_live), pas un gate CI — nécessite le stack complet et un vrai petit
+  modèle pour l'interprète.
+incident: I-16
+phase: 2
+corpus: live
+turns:
+  - user: "Quel est le pourcentage de jours entre deux lundis consécutifs ?"
+    expect:
+      context_empty: true
+      info_banner: true
+      refusal: false

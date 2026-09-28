@@ -1,0 +1,30 @@
+name: clarification_ambigu
+description: >
+  US-103 3e issue du gate (étude §6.5, "l'empathie du notaire") : ambiguïté
+  PROUVÉE. Tour 1 établit zh_glass, tour 2 passe à fr_bail — le dossier tient
+  alors DEUX candidats. Le tour 3 est un suivi anaphorique (它的...) dont les
+  propres mots ancrent zh_glass (員工/人數) et rien de fr_bail : conflit
+  déterministe entre le référent tenu et ce que la question désigne → UNE
+  question de clarification nommant les deux candidats, sans appel LLM.
+  (Forme calibrée sur le vrai pipeline : l'ancrage FR→CJK ne trouve rien —
+  US-101 —, donc le suivi ambigu est posé en chinois pour que ses propres
+  mots ancrent réellement le candidat non tenu.)
+incident: ""
+phase: 2
+corpus: committed
+turns:
+  - user: "Quel document parle de 範例玻璃 ?"
+    expect:
+      context_contains: ["zh_glass"]
+      refusal: false
+      clarification: false
+  - user: "Quel est le loyer mensuel du bail de Jean Dupont ?"
+    expect:
+      context_contains: ["fr_bail"]
+      refusal: false
+      clarification: false
+  - user: "它的員工人數是多少？"
+    expect:
+      clarification: true
+      clarification_names: ["fr_bail", "zh_glass"]
+      refusal: false

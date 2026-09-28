@@ -1,0 +1,317 @@
+# ==============================================================================
+# AiTao — Complete Configuration (Template)
+# Format: TOML (https://toml.io)
+# ==============================================================================
+#
+# Copy this file to config.toml and customize it:
+#
+#   cp config.toml.template config.toml          # macOS / Linux
+#   Copy-Item config.toml.template config.toml   # Windows PowerShell
+#
+# Variable substitution (resolved by AiTao at startup, not by the shell):
+#   ${HOME}         →  your home directory
+#   ${storage_root} →  value of [paths].storage_root below
+#
+# 🔧 Fill in order of blocks:
+#   1. WHO AM I?       → identity + LLM engine
+#   2. MY DOCUMENTS    → folders to index
+#   3. SYSTEM          → ports, paths, logs  (rarely modified)
+#   4. ADVANCED        → RAG, OCR, translation  (do not touch unless needed)
+#
+# Layer priority (highest wins):
+#   config/config.toml  →  ~/.config/aitao/user.toml  →  environment variables
+# ==============================================================================
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# 🟢 BLOCK 1 — WHO AM I?
+# These two sections are injected as system context in each conversation.
+# ══════════════════════════════════════════════════════════════════════════════
+
+[identity]
+who_are_you  = "Remplacez ceci par une courte description de vous : nationalité, ville, âge, langues parlées."
+who_is_aitao = "Je suis AiTao, un assistant IA local conçu pour vous aider à rechercher et interagir avec vos documents personnels. Tout s'exécute sur votre machine ; vos données ne quittent jamais votre appareil."
+
+# Reply language, regardless of the language of your documents.
+# "mirror" (default) = reply in the language of each question.
+# To force one language, set the instruction in that language:
+# "français", "English", "中文", "Deutsch"… (empty = same as "mirror").
+response_language = "mirror"
+
+# --- LLM Engine ---
+# backend = "openai"  → llama.cpp / LM Studio / vLLM  (recommended if Ollama is not available)
+# backend = "ollama"  → Ollama  (requires Ollama running in the background)
+[llm]
+backend       = "ollama"
+# Leave commented = auto-selection at startup of the smallest installed model
+# deemed safe for RAG chat (neither "reasoning" — which thinks in loops for
+# minutes without responding —, nor non-conversational model like a
+# translation/embedding model). No hardcoded model name is guaranteed to be
+# installed on your machine: uncomment and customize only if you want to
+# force a specific model (e.g. after `ollama pull llama3.1:8b`).
+# default_model = "llama3.1:8b"
+ollama_url    = "http://localhost:11434"
+# Streaming: max seconds of silence (no new token) before cutting a stalled
+# model. Resets on every token, so a slow-but-producing model is never cut.
+stream_idle_timeout = 90.0
+
+# Section used when backend = "openai"
+# [llm.openai]
+# base_url = "http://127.0.0.1:9090/v1"   # llama-server — keep the final /v1
+# model    = "model-name-exposed-by-your-server"
+# api_key  = ""
+
+[llm.generation]
+temperature = 0.7
+top_p       = 0.9
+max_tokens  = 2048
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# 🟡 BLOCK 2 — MY DOCUMENTS
+# AiTao scans these folders and indexes all supported files.
+# Paths with spaces, accents, or & are safe in TOML.
+# ══════════════════════════════════════════════════════════════════════════════
+
+[indexing]
+enabled          = true
+interval_minutes = 60
+
+include_paths = [
+    # Add your folders below. Examples:
+    # "${HOME}/Documents/",
+    # "${HOME}/Dropbox/",
+    # "D:/MyDocuments/",   # absolute Windows path
+]
+
+# Folders to ignore (applied recursively). An entry matches the exact name
+# OR as a suffix: ".egg-info" catches "aitao.egg-info", "dist-info"
+# catches "aitao-2.8.1.dist-info".
+exclude_dirs = [
+    "__pycache__", ".git", ".venv", "venv", "env", ".env",
+    "node_modules", ".ds_store", "dist", "build", "target",
+    "site-packages", ".idea", ".vscode",
+    ".egg-info", ".dist-info", ".mypy_cache", ".pytest_cache", ".ruff_cache",
+]
+
+exclude_files      = [".DS_Store", "package-lock.json", "yarn.lock", "Thumbs.db"]
+exclude_extensions = [".lock", ".log", ".tmp", ".swp", ".cache"]
+
+# Files deleted from disk: they remain searchable with a "file deleted" marker
+# for N days (trash), then are purged from the index.
+trash_retention_days = 30
+
+# US-113: a file that fails indexing is retried on each scan until it reaches
+# this number of attempts; beyond that, it is left aside (visible via failure
+# tracking) instead of being recycled endlessly.
+max_reconciliation_retries = 3
+
+# US-113: maximum duration (seconds) allowed for extracting ONE file
+# (including OCR) before giving up with an explicit "extraction timeout"
+# error — the worker moves to the next file instead of staying blocked
+# (measured once: a textless PDF froze the worker for 1h22, zero CPU).
+extraction_timeout_s = 300
+
+# US-126-C: when true, every periodic worker scan automatically removes from
+# the index any document whose path is no longer under any `include_paths`
+# root above (e.g. after you delete or comment out a folder here). This is
+# NEVER based on whether a path currently exists on disk — a folder that is
+# still listed here but momentarily unavailable (e.g. an unplugged USB drive
+# or an unmounted cloud folder) keeps its documents indexed. Default is
+# false: nothing is auto-deleted unless you opt in. Manual equivalent:
+# `aitao index prune` (with --dry-run to preview first).
+auto_prune_out_of_scope = false
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# 🔵 BLOCK 3 — SYSTEM
+# Storage paths, API, logs. Rarely modified.
+# ══════════════════════════════════════════════════════════════════════════════
+
+[paths]
+storage_root    = "${HOME}/.aitao/data"
+models_dir      = "${HOME}/.aitao/models"
+logs_dir        = "${storage_root}/logs"
+queue_dir       = "${storage_root}/queue"
+cache_dir       = "${storage_root}/cache"
+corrections_dir = "${storage_root}/corrections"
+
+[api]
+host         = "0.0.0.0"
+port         = 8200
+cors_enabled = true
+cors_origins = ["*"]
+
+[api.rate_limit]
+enabled             = false
+requests_per_minute = 60
+
+[api.auth]
+enabled = false
+api_key = ""
+
+[logger]
+level            = "info"   # trace | debug | info | warn | error
+console_pretty   = true
+file_json        = true
+rotation_enabled = true
+max_file_mb      = 20
+max_files        = 5
+
+[app]
+name = "aitao"
+mode = "normal"  # debug | normal
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# ⚙️  BLOCK 4 — ADVANCED SETTINGS
+# Do not modify unless you have a specific need.
+# ══════════════════════════════════════════════════════════════════════════════
+
+# --- Search Engine ---
+[search.meilisearch]
+url        = "http://localhost:7700"
+api_key    = ""
+index_name = "aitao_documents"
+searchable_attributes  = ["title", "content", "category", "tags"]
+displayed_attributes   = ["id", "title", "file_path", "category", "language", "created_at", "updated_at"]
+filterable_attributes  = ["category", "language", "created_at", "file_type"]
+
+# v4 (EPIC-31): embedding model identity shared by both Meilisearch indexes
+# (documents + chunks). Replaces the old [search.lancedb] section, which no
+# longer describes a real store since LanceDB removal (US-113) — a v3.x
+# config.toml still using old keys under [search.lancedb] continues to work
+# (automatic fallback).
+[search.embedding]
+embedding_model = "BAAI/bge-m3"
+dimension       = 1024
+offline_mode    = true
+
+[search.hybrid]
+enable_query_expansion = true
+
+# --- RAG — Retrieval-Augmented Generation ---
+[rag]
+enabled             = true
+use_chunks          = true
+max_context_chunks  = 5
+max_context_docs    = 5
+context_max_tokens  = 4000
+min_relevance_score = 0.3
+include_metadata    = true
+# Query distillation (US-89): search with the question's salient tokens only
+# (rare-in-index + structured: emails, IDs, CJK runs) so function words don't
+# pollute multilingual retrieval. distill_max_doc_ratio: a latin word in more
+# than this fraction of documents is treated as a stop-word and dropped.
+distill_query        = true
+distill_max_doc_ratio = 0.15
+# Exact-token pinning (US-89-2): a distinctive token found verbatim in the
+# question (email, ID, quoted phrase, CJK run) pins EVERY document that contains
+# it — so "where does this email appear?" lists all sources, not just one.
+# pin_max_docs caps how many are pinned (protects the context budget).
+pin_exact_token       = true
+pin_max_docs          = 7
+# Reliability check of the answer (US-076/US-092) — "off" | "fast" | "deep".
+# Default "fast" (US-092): free, ~0.1 s, deterministic.
+#   "fast": deterministic pass flagging factual details (numbers, dates,
+#           amounts) not found in your documents (~0.1 s, free).
+#   "deep": adds a second LLM pass catching "right document, wrong figure"
+#           (slower, free). verify_model: dedicated model for that pass;
+#           "defaut" reuses the chat model (pick a fast non-reasoning model).
+verify_answer        = "fast"
+verify_model         = "defaut"
+# US-102 — the "conversation dossier" (session referent, EPIC-30 brick 1)
+# logs every decision (referent held/recalled/released). true (default during
+# the EPIC-30 rollout): INFO level, so the reliability gain can be measured
+# against real usage. false: same logs at DEBUG (never fully silenced —
+# reliability-study.md §6.4, 5th invariant).
+reliability_debug    = true
+# US-105 (incident I-16) — a small LLM call routes each question as
+# "documentary" (search your documents) or "general" (calculation, reasoning,
+# general knowledge — answered WITHOUT injecting any document context, with an
+# explicit "ℹ️ general answer" banner). Biased toward documentary on any
+# doubt; fails open to documentary (never general) on any error, timeout, or
+# unparsable response, and reuses the same verify_model as the deep
+# verification pass — no new model to configure.
+intent_router        = true
+# US-104 (EPIC-30 phase 3, "answer reader") — when the deterministic
+# grounding check is about to flag a sentence, a small LLM is asked (one
+# grouped call, only on the would-be-flagged sentences) whether it is a
+# factual affirmation or mere padding/echo of the document metadata (the
+# rules alone are deliberately narrow). Can only REMOVE a flag already
+# raised, never add one, so disabling it loses no safety net — only the
+# extra LLM call on flagged answers. Reuses the same verify_model.
+reader_llm            = true
+
+# --- Long Document Splitting ---
+[chunking]
+enabled            = true
+chunk_size         = 512
+chunk_overlap      = 50
+min_chunk_size     = 100
+max_chunk_size     = 1024
+split_on_sentences = true
+embedding_model    = "BAAI/bge-m3"
+
+# --- Worker — background processing daemon ---
+[worker]
+poll_interval      = 5
+cpu_threshold      = 80.0
+stuck_task_timeout = 600
+
+# --- OCR — text extraction from images and scanned PDFs ---
+[ocr]
+# OCR engine — deliberately named "engine" (not "provider") to avoid confusion
+# with the [llm] backend. "auto" follows engine_order; or force one engine by name.
+engine       = "auto"                          # "auto" | "macos_vision" | "tesseract" | "qwen_vl"
+engine_order = ["macos_vision", "tesseract"]   # try order in auto mode (macOS uses Apple Vision, else Tesseract)
+# qwen_vl (Ollama vision model) is opt-in — not bundled with AiTao. Add it to
+# engine_order above if you run an Ollama vision model locally.
+# Candidate languages used when a scanned document has no detectable language.
+languages    = ["fr", "en", "zh-Hant"]
+confidence_threshold = 0.7
+
+[ocr.router]
+table_area_min    = 0.05
+min_intersections = 2
+min_line_density  = 0.0002
+
+[ocr.qwen_vl]
+model_path   = ""
+n_gpu_layers = -1
+context_size = 4096
+max_tokens   = 2048
+
+# --- Translation ---
+[translation]
+provider           = "mbart50"  # mbart50 | nllb
+source_lang        = "en"
+target_lang        = "fr"
+score_translations = true
+min_confidence     = 0.6
+
+[translation.mbart50]
+model_name = "facebook/mbart-large-50-many-to-many-mmt"
+use_gpu    = false
+batch_size = 8
+
+[translation.nllb]
+model_name = "facebook/nllb-200-distilled-600M"
+use_gpu    = false
+batch_size = 8
+
+# --- Automatic Categorization ---
+[categories]
+enabled = true
+default = "other"
+labels  = [
+    "administration", "comptabilite", "juridique", "technique",
+    "personnel", "commercial", "medical", "education", "autre",
+]
+
+# --- System Limits ---
+[resources]
+max_workers      = 4
+batch_size       = 10
+max_file_size_mb = 100
+memory_limit_mb  = 2048

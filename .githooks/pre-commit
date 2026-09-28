@@ -1,0 +1,162 @@
+#!/bin/bash
+# Copyright (C) 2025-2026 Philippe BERTIERI
+# SPDX-License-Identifier: AGPL-3.0-only
+# Pre-commit hook for AiTao
+#
+# Checks:
+#   1. No 'pip install' without 'uv' prefix (uv-first policy)
+#   2. ruff lint on staged .py files + full src/ and tests/ trees — blocks on errors
+#
+# To install: git config core.hooksPath .githooks
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+echo "🔍 AiTao pre-commit check..."
+
+# Check for 'pip install' WITHOUT 'uv' prefix in staged files
+# We use grep -P for perl regex to match "pip install" not preceded by "uv "
+# Exclude documentation files and this hook itself
+# --diff-filter=ACMR: skip deleted files (they no longer exist on disk)
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACMR | grep -E "\.(py|sh|bash)$" | grep -v ".githooks/")
+
+if [ -n "$STAGED_FILES" ]; then
+    OFFENDING=""
+    for file in $STAGED_FILES; do
+        # Match lines with "pip install" but NOT "uv pip install"
+        if grep -E "^[^#]*pip install" "$file" 2>/dev/null | grep -v "uv pip install" | grep -q "pip install"; then
+            OFFENDING="$OFFENDING $file"
+        fi
+    done
+    
+    if [ -n "$OFFENDING" ]; then
+        echo -e "${RED}❌ ERROR: Found 'pip install' without 'uv' prefix!${NC}"
+        echo ""
+        echo "The following files use 'pip install' instead of 'uv pip install':"
+        for file in $OFFENDING; do
+            echo -e "  ${YELLOW}→ $file${NC}"
+            grep -n "pip install" "$file" 2>/dev/null | grep -v "uv pip" | head -3 | while read line; do
+                echo "      $line"
+            done
+        done
+        echo ""
+        echo -e "${YELLOW}AiTao uses 'uv' for dependency management (PRD requirement).${NC}"
+        echo "Please replace 'pip install' with 'uv pip install'."
+        echo ""
+        echo "To bypass (not recommended): git commit --no-verify"
+        exit 1
+    fi
+fi
+
+echo -e "${GREEN}✓ No 'pip install' issues found${NC}"
+
+# --- Check 2: ruff lint on staged Python files --------------------------------
+STAGED_PY=$(git diff --cached --name-only --diff-filter=ACMR | grep "\.py$")
+
+if [ -n "$STAGED_PY" ]; then
+    # Locate ruff: system PATH, then common venv locations
+    RUFF_BIN=""
+    if command -v ruff &>/dev/null; then
+        RUFF_BIN="ruff"
+    elif [ -x "$(dirname "$0")/../.venv/bin/ruff" ]; then
+        RUFF_BIN="$(dirname "$0")/../.venv/bin/ruff"
+    elif [ -x "$HOME/.local/share/venvs/aitao/bin/ruff" ]; then
+        RUFF_BIN="$HOME/.local/share/venvs/aitao/bin/ruff"
+    fi
+
+    if [ -n "$RUFF_BIN" ]; then
+        # Lint the staged files, plus the full src/ and tests/ trees when they exist.
+        # The same hook is installed in aitao-admin, which has neither — naming a
+        # missing directory makes ruff fail and would block every commit there.
+        RUFF_TARGETS="$STAGED_PY"
+        [ -d "src" ] && RUFF_TARGETS="$RUFF_TARGETS src/"
+        [ -d "tests" ] && RUFF_TARGETS="$RUFF_TARGETS tests/"
+
+        RUFF_OUT=$($RUFF_BIN check $RUFF_TARGETS 2>&1)
+        RUFF_EXIT=$?
+        if [ $RUFF_EXIT -ne 0 ]; then
+            echo -e "${RED}❌ ruff found errors:${NC}"
+            echo "$RUFF_OUT"
+            echo ""
+            echo "Fix with: ruff check $RUFF_TARGETS --fix"
+            echo "To bypass (not recommended): git commit --no-verify"
+            exit 1
+        fi
+        echo -e "${GREEN}✓ ruff: no errors ($RUFF_TARGETS)${NC}"
+    else
+        echo -e "${YELLOW}⚠ ruff not found in PATH or venv — skipping lint check${NC}"
+    fi
+fi
+
+# --- Check 3: no secrets in what is about to be committed ---------------------
+# Why this exists: GitHub blocks secrets at push time on public repositories, but
+# the free plan gives private repositories no such protection — and the private
+# repositories are exactly where a leaked licence signing key would do the most
+# damage. This runs the same idea locally, before anything leaves the machine, and
+# it behaves identically on every repository it is installed in.
+#
+# Detection is content-based, not extension-based: `portable/.../cacert.pem` is a
+# bundle of *public* certificates and must not raise an alarm every time pip
+# refreshes it.
+#
+# To allow a deliberate fixture, end the line with: pragma: allowlist secret
+
+SECRET_FAIL=0
+
+# 3a — file names that should never be committed at all
+BAD_FILES=$(git diff --cached --name-only --diff-filter=ACMR \
+    | grep -Ei '(^|/)(\.env|\.envrc|id_rsa|id_dsa|id_ecdsa|id_ed25519|credentials\.json)$|\.(p12|pfx|jks|keystore)$')
+
+if [ -n "$BAD_FILES" ]; then
+    echo -e "${RED}❌ ERROR: these files must never be committed:${NC}"
+    echo "$BAD_FILES" | while read -r f; do echo -e "  ${YELLOW}→ $f${NC}"; done
+    SECRET_FAIL=1
+fi
+
+# 3b — secret patterns inside the lines being added
+ADDED=$(git diff --cached -U0 --diff-filter=ACMR \
+    | grep '^+' | grep -v '^+++' | grep -v 'pragma: allowlist secret')
+
+if [ -n "$ADDED" ]; then
+    # Known-shape credentials: private keys and service tokens.
+    KNOWN=$(echo "$ADDED" | grep -E \
+        -e '-----BEGIN [A-Z ]*PRIVATE KEY-----' \
+        -e '(ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9]{36}' \
+        -e 'github_pat_[A-Za-z0-9_]{22,}' \
+        -e 'AKIA[0-9A-Z]{16}' \
+        -e 'sk-ant-[A-Za-z0-9_-]{20,}' \
+        -e 'xox[baprs]-[A-Za-z0-9-]{10,}' \
+        -e 'AIza[0-9A-Za-z_-]{35}')
+
+    if [ -n "$KNOWN" ]; then
+        echo -e "${RED}❌ ERROR: a credential appears in the staged changes:${NC}"
+        echo "$KNOWN" | head -5 | cut -c1-100 | while read -r l; do echo -e "  ${YELLOW}→ ${l}${NC}"; done
+        SECRET_FAIL=1
+    fi
+
+    # Hard-coded values assigned to a secret-looking name. Placeholders excluded,
+    # otherwise the check becomes noise and everybody starts bypassing it.
+    GENERIC=$(echo "$ADDED" \
+        | grep -Ei '(password|passwd|secret|api_?key|auth_?token|access_?token|private_?key)["'"'"']?[[:space:]]*[:=][[:space:]]*["'"'"'][^"'"'"']{8,}["'"'"']' \
+        | grep -Eiv 'example|placeholder|your[-_]|changeme|dummy|fake|redacted|sample|xxx|not-needed|aitao-local|<|\$\{|\{\{|os\.environ|getenv|%s')
+
+    if [ -n "$GENERIC" ]; then
+        echo -e "${RED}❌ ERROR: a hard-coded secret value appears in the staged changes:${NC}"
+        echo "$GENERIC" | head -5 | cut -c1-100 | while read -r l; do echo -e "  ${YELLOW}→ ${l}${NC}"; done
+        echo -e "${YELLOW}If this is a test fixture, append: pragma: allowlist secret${NC}"
+        SECRET_FAIL=1
+    fi
+fi
+
+if [ "$SECRET_FAIL" -ne 0 ]; then
+    echo ""
+    echo "Read the value from the environment or a file outside the repository."
+    echo "To bypass (not recommended): git commit --no-verify"
+    exit 1
+fi
+
+echo -e "${GREEN}✓ no secret detected in staged changes${NC}"
+
+exit 0

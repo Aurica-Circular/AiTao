@@ -1,0 +1,25 @@
+name: i17_meta_question
+description: >
+  I-17 — la question méta "Quels sont les documents qui parlent
+  d'enseignants ?" n'a qu'un seul terme saillant (« enseignants ») mais le
+  distillateur (US-89-1) gardait aussi « documents »/« parlent »/« quels »,
+  aucun n'étant assez rare dans l'index pour être écarté par le filtre de
+  rareté seul — le document cible coulait aux deux étages de récupération
+  (mesuré sur 4 architectures, étude US-106 volet 2). Le corpus committé
+  inclut 8 leurres synthétiques (fr_faq_*.md, style FAQ portail
+  documentaire — auto-pollution réaliste, cf. backlog US-89-1) qui
+  partagent la forme "Quels sont les documents qui parlent de X ?" et
+  noient fr_ecole.md (le seul document contenant « enseignant ») hors du
+  contexte récupéré SANS le correctif — vérifié manuellement (voir rapport).
+  La réduction de forme méta (étude US-106 volet 2bis) ramène la requête à
+  « enseignants » avant toute distillation par rareté, verbatim, sans appel
+  LLM, et fr_ecole.md revient dans le contexte.
+incident: I-17
+phase: 0
+corpus: committed
+turns:
+  - user: "Quels sont les documents qui parlent d'enseignants ?"
+    expect:
+      context_contains: ["fr_ecole"]
+      refusal: false
+      clarification: false

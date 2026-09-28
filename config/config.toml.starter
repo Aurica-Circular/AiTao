@@ -1,0 +1,102 @@
+# ==============================================================================
+# AiTao — Minimal Configuration (Quick Start)
+# Edit this file then run: ./aitao.sh start
+#
+# Need help?        docs/GETTING_STARTED.md
+# All options:      config/config.toml.template
+# ==============================================================================
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# 🟢 BLOCK 1 — WHO AM I?
+# ══════════════════════════════════════════════════════════════════════════════
+
+[identity]
+who_are_you  = "Votre prénom, nationalité, âge (ex. : 'Marie, française, 42 ans')"
+# who_is_aitao = "Optional: customize AiTao's introduction"
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# 🟡 BLOCK 2 — MY DOCUMENTS
+# ══════════════════════════════════════════════════════════════════════════════
+
+[indexing]
+include_paths = [
+    # "${HOME}/Documents",        # macOS / Linux
+    # "C:/Users/YourName/Documents",  # Windows
+]
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# 🟢 LLM ENGINE
+# Choose a backend — uncomment the corresponding section.
+# ══════════════════════════════════════════════════════════════════════════════
+
+# Option A — Ollama (local models, run 'ollama list' to see your models)
+#
+# ⚠️ Choose a NON-reasoning chat model (granite4, llama3.1, qwen2.5…).
+# "Reasoning" models (qwen3/qwen3.5, gemma4, deepseek-r1, qwq…) think
+# internally for minutes on long RAG prompts before the first visible word —
+# it looks like a hang. Measured on real RAG prompt: granite4 responds in ~20s
+# while qwen3.5/gemma4 burn their tokens in "thinking". AiTao warns at startup
+# if the configured model is at risk (US-097).
+#
+# Leave default_model commented = auto-selection of the smallest installed
+# model deemed safe (same logic as the warning above). No hardcoded model name
+# is guaranteed to be installed on your machine — uncomment only to force a
+# specific model.
+[llm]
+backend       = "ollama"
+# default_model = "granite4:latest"
+ollama_url    = "http://localhost:11434"
+
+# Option B — llama.cpp / LM Studio / OpenAI-compatible server
+# [llm]
+# backend = "openai"
+#
+# [llm.openai]
+# base_url = "http://127.0.0.1:9090/v1"
+# model    = "model-name-exposed-by-your-server"
+# api_key  = ""
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# 🔵 RELIABILITY
+# ══════════════════════════════════════════════════════════════════════════════
+
+[rag]
+# Reliability verification level (US-076/US-092) — "fast" by default.
+#   "off"  : no verification.
+#   "fast" : AiTao re-reads its answer and flags numeric details (numbers,
+#            dates, amounts) not found in your documents
+#            (deterministic, ~0.1s, free).
+#   "deep" : additionally, a 2nd model pass checks figure context
+#            ("right doc, wrong number") — slower, Premium.
+verify_answer = "fast"
+
+# Dedicated model for "deep" pass (US-076). "defaut" = reuses the chat model.
+# To speed up "deep", point to a FAST non-reasoning model (e.g. "granite4")
+# you've already downloaded: a "reasoning" model makes verification take 15-36s,
+# a fast model brings it down to ~0.2s. Ollama-oriented (one server, many models).
+# Model not found → silent fallback to the chat model.
+verify_model = "defaut"
+
+# US-102 — the "conversation dossier" (session referent, EPIC-30 brick 1)
+# logs every decision (referent held/recalled/released). true (default during
+# rollout): INFO level. false: same logs at DEBUG (never fully silent — 5th
+# invariant, study §6.4).
+reliability_debug = true
+
+# US-105 — a small model routes each question: "documentary" (search your
+# documents) or "general" (calculation, reasoning, general knowledge — answers
+# WITHOUT injecting your documents, with an explicit ℹ️ banner). If in doubt,
+# or if this module fails/times out, the question remains documentary (current
+# behavior is never lost). true by default.
+intent_router = true
+
+# US-104 — when deterministic verification is about to flag a sentence, a
+# small model is consulted (one grouped call, only on flagged sentences) to say
+# if it's a factual claim or mere padding ("it's the first document"). Can only
+# REMOVE a flag, never add one: disabling it loses no safety net, just the
+# extra LLM call. true by default.
+reader_llm = true

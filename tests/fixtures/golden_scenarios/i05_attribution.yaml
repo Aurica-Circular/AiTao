@@ -1,0 +1,20 @@
+name: i05_attribution
+description: >
+  I-05 — un extrait vrai mais attribué au MAUVAIS document. Le chiffre
+  "4200 USD" existe bien dans le contexte récupéré (en_invoice.md), mais la
+  réponse l'attribue à en_receipt.md, qui ne le mentionne pas. Le validateur
+  "fast" ne vérifie que la présence verbatim dans le contexte, pas le
+  document source — il ne voit donc rien. La liaison extrait<->source
+  (US-104, phase 3) ferme le trou : un bandeau correctif nommant la source
+  probable (en_invoice.md) doit apparaître.
+incident: I-05
+phase: 3
+corpus: committed
+turns:
+  - user: "Le document RCP-2026-0099 confirme-t-il le même montant que INV-2026-0042 ?"
+    scripted_answer: >
+      D'après en_receipt.md, le montant reçu s'élève à 4200 USD.
+    expect:
+      context_contains: ["en_invoice", "en_receipt"]
+      banner: present
+      banner_contains: ["en_invoice"]

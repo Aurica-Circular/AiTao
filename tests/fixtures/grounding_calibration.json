@@ -1,0 +1,71 @@
+{
+  "_comment": "US-076 phase 2 — synthetic grounding calibration set. 100% fictional content (no real documents, no secrets) so it is safe to version on GitHub. Each claim is labelled: 'supported' (faithful to the context), 'offtopic' (unrelated — the deterministic check SHOULD flag it), or 'contradiction' (right topic, wrong figure — the deterministic check CANNOT catch it; motivates the phase-2 LLM pass).",
+  "cases": [
+    {
+      "domain": "bail",
+      "lang": "fr",
+      "context": [
+        "Article 3 — Durée et préavis. Le présent bail est conclu pour une durée de trois ans. En zone tendue, le préavis de départ du locataire est réduit à un mois. Le congé est notifié par lettre recommandée avec accusé de réception.",
+        "Article 4 — Loyer et charges. Le loyer mensuel est fixé à 1 200 euros charges comprises, révisé chaque année selon l'indice de référence des loyers (IRL) publié par l'INSEE."
+      ],
+      "claims": [
+        {"text": "Le préavis de départ du locataire est d'un mois en zone tendue.", "label": "supported"},
+        {"text": "Le loyer mensuel s'élève à 1 200 euros charges comprises.", "label": "supported"},
+        {"text": "Le jardin partagé est entretenu par une association de quartier.", "label": "offtopic"},
+        {"text": "Le préavis de départ du locataire est de trois mois.", "label": "contradiction"}
+      ]
+    },
+    {
+      "domain": "rh_conges",
+      "lang": "fr",
+      "context": [
+        "Les salariés acquièrent 2,5 jours ouvrables de congés payés par mois de travail effectif, soit 30 jours ouvrables par an. Le solde de congés non pris au 31 mai de l'année suivante est perdu, sauf accord exprès de la direction."
+      ],
+      "claims": [
+        {"text": "Un salarié acquiert 2,5 jours ouvrables de congés payés par mois travaillé.", "label": "supported"},
+        {"text": "Le solde de congés non pris au 31 mai est perdu sauf accord de la direction.", "label": "supported"},
+        {"text": "La cantine d'entreprise propose un menu végétarien tous les mardis midi.", "label": "offtopic"},
+        {"text": "Les congés payés annuels représentent au total 25 jours ouvrables.", "label": "contradiction"}
+      ]
+    },
+    {
+      "domain": "facture",
+      "lang": "fr",
+      "context": [
+        "Facture n° 2024-0457 émise le 12 mars 2024. Montant hors taxes : 3 500 euros. TVA au taux de 20 % : 700 euros. Total toutes taxes comprises : 4 200 euros. Échéance de paiement : 30 jours à compter de la date d'émission."
+      ],
+      "claims": [
+        {"text": "Le total toutes taxes comprises de la facture est de 4 200 euros.", "label": "supported"},
+        {"text": "L'échéance de paiement est de 30 jours à compter de l'émission.", "label": "supported"},
+        {"text": "Le fournisseur ne livre que les jours ouvrés avant midi.", "label": "offtopic"},
+        {"text": "Le taux de TVA appliqué sur cette facture est de 10 %.", "label": "contradiction"}
+      ]
+    },
+    {
+      "domain": "rh_anciennete",
+      "lang": "fr",
+      "context": [
+        "La prime d'ancienneté est versée à partir de trois ans de présence dans l'entreprise. Elle correspond à 3 % du salaire de base, majorée de 1 % tous les trois ans supplémentaires, dans la limite d'un plafond de 15 % du salaire de base."
+      ],
+      "claims": [
+        {"text": "La prime d'ancienneté est versée à partir de trois ans de présence.", "label": "supported"},
+        {"text": "La prime d'ancienneté est plafonnée à 15 % du salaire de base.", "label": "supported"},
+        {"text": "Le télétravail est autorisé deux jours par semaine avec accord du manager.", "label": "offtopic"},
+        {"text": "La prime d'ancienneté est versée dès la première année de présence.", "label": "contradiction"}
+      ]
+    },
+    {
+      "domain": "rh_etrangers",
+      "lang": "zh",
+      "context": [
+        "外籍員工的試用期為三個月。在試用期內，勞資雙方均可提前三天以書面通知解除勞動合同。外籍員工每年享有十天的帶薪年假，未休假期不予折算現金。"
+      ],
+      "claims": [
+        {"text": "外籍員工的試用期為三個月，試用期內可提前三天書面通知解除合同。", "label": "supported"},
+        {"text": "外籍員工每年享有十天的帶薪年假，未休假期不予折算現金。", "label": "supported"},
+        {"text": "公司食堂每週三中午供應素食套餐給全體員工。", "label": "offtopic"},
+        {"text": "外籍員工的試用期為六個月，可隨時無條件解除合同。", "label": "contradiction"}
+      ]
+    }
+  ]
+}

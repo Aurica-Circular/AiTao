@@ -1,0 +1,24 @@
+name: question_generale
+description: >
+  I-16 — question de calcul pur ("pourcentage de jours entre deux lundis")
+  posée dans une session dont le corpus contient un calendrier administratif
+  piège (114年鎮公所辦公日曆表, zh_calendar) qui partage littéralement les mots
+  "lundi"/"jour" avec la question. Avant US-105, la récupération ancrait ce
+  document et le modèle contorsionnait sa réponse dessus au lieu de faire le
+  calcul. L'interprète d'intention (US-105) route cette question en "générale"
+  AVANT toute recherche : aucun contexte documentaire n'est injecté, la
+  réponse est rendue (jamais un refus), avec le bandeau ℹ️ honnête.
+incident: I-16
+phase: 2
+corpus: committed
+turns:
+  - user: "Quel est le pourcentage de jours entre deux lundis consécutifs ?"
+    intent_route: general
+    scripted_answer: >
+      Deux lundis consécutifs sont séparés de 7 jours. Sur ces 7 jours, 1 est
+      un lundi, soit environ 14,3 %.
+    expect:
+      route: general
+      context_empty: true
+      refusal: false
+      info_banner: true

@@ -1,0 +1,17 @@
+name: i11_referent
+description: >
+  I-11 — question anaphorique de suivi ("il", "ce document"). Le tour 2 doit
+  rester ancré sur 範例玻璃 (zh_glass), jamais partir sur le baromètre juste
+  parce que celui-ci contient littéralement le mot "pages".
+incident: I-11
+phase: 1
+corpus: committed
+turns:
+  - user: "Quel document parle de 範例玻璃 ?"
+    expect:
+      context_contains: ["zh_glass"]
+      refusal: false
+  - user: "Combien de pages contient-il ?"
+    expect:
+      referent_kept: "zh_glass"
+      context_excludes: ["fr_barometre"]

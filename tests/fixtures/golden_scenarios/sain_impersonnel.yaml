@@ -1,0 +1,20 @@
+name: sain_impersonnel
+description: >
+  Garde-fou du dossier courant (US-102, revue orchestrateur) : le "il"
+  IMPERSONNEL français ("Y a-t-il...") n'est PAS une anaphore. En pleine
+  session, une question existentielle sur le contenu d'un AUTRE document doit
+  laisser la recherche normale ancrer ce document — jamais tenir l'ancien
+  référent ni neutraliser l'ancrage du bon (miroir d'I-11 : mauvais référent
+  tenu à tort). "contient-il ?" reste, lui, une vraie anaphore (I-11).
+incident: ""
+phase: 1
+corpus: committed
+turns:
+  - user: "Quel document parle de 範例玻璃 ?"
+    expect:
+      context_contains: ["zh_glass"]
+      refusal: false
+  - user: "Y a-t-il un document qui parle du loyer mensuel ?"
+    expect:
+      context_contains: ["fr_bail"]
+      refusal: false

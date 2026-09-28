@@ -1,0 +1,20 @@
+name: i09_resume
+description: >
+  I-09 — demande de résumé d'un document unique. Un résumé correct, sans
+  détail chiffré inventé, ne doit produire AUCUN bandeau (US-092 : seule la
+  prose chiffrée est vérifiée, la paraphrase libre ne l'est plus).
+incident: I-09
+phase: 0
+corpus: committed
+turns:
+  - user: "Résume en une phrase le document « 外籍從業人員管理辦法 »."
+    scripted_answer: >
+      Le document explique les règles de recrutement, de permis de séjour et
+      de travail, ainsi que la gestion des dortoirs pour les employés
+      étrangers, sous la responsabilité du service des ressources humaines
+      (source : zh_foreign.md).
+    expect:
+      context_contains: ["zh_foreign"]
+      refusal: false
+      banner: absent
+      cited_source: "zh_foreign"

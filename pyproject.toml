@@ -1,0 +1,139 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aitao"
+version = "5.0.0"
+description = "AiTao — private, local-first AI assistant that searches your documents and answers questions about them"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+    { name = "Philippe BERTIERI", email = "support@auricacircular.com" }
+]
+license = { file = "LICENSE" }
+keywords = ["ai", "local", "rag", "privacy", "llm"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: GNU Affero General Public License v3",
+    "Natural Language :: English",
+    "Natural Language :: French",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+dependencies = [
+    # --- Configuration (US-22 TypedSettings) ---
+    "pydantic>=2.0",
+    # --- Core AI & Inference ---
+    "sentence-transformers>=3.3.1",
+    # --- Vector Database ---
+    "lancedb>=0.17.0",
+    "pandas>=2.3.0",
+    # --- Full-text Search ---
+    "meilisearch>=0.31.0",
+    # --- SQL & ORM ---
+    "SQLAlchemy>=2.0.0",
+    "greenlet>=2.0.0",
+    "aiosqlite>=0.20.0",
+    # --- Web Search ---
+    "duckduckgo-search>=6.0.0",
+    "beautifulsoup4>=4.12.0",
+    # --- API & Server ---
+    "fastapi>=0.115.0",
+    "uvicorn>=0.34.0",
+    # --- MCP Server (US-055) ---
+    "fastmcp>=3.1.0",
+    "requests>=2.32.0",
+    "httpx>=0.27.0",
+    "python-dotenv>=1.0.0",
+    # --- File System & Utilities ---
+    "psutil>=6.1.0",
+    "watchfiles>=1.0.0",
+    "toml>=0.10.2",
+    "tomli-w>=1.0.0",
+    # --- CLI ---
+    "typer>=0.12.0",
+    "rich>=13.0.0",
+    # --- Document Extraction (US-011) ---
+    # python-docx / python-pptx / openpyxl moved to aitao-premium (US-138-1):
+    # DOCX/PPTX/XLSX/ODF extraction is a Premium feature (PRD §5) — their
+    # libraries are no longer installed with the free edition.
+    "pypdf>=5.0.0",
+    "langdetect>=1.0.9",
+    # --- Image EXIF Extraction (US-027) ---
+    "Pillow>=10.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "black>=23.0",
+    # Pin ruff exactly: an unpinned ">=0.1" let CI float to 0.16.x, which
+    # enforces a far larger default ruleset than the 0.15.x used locally and by
+    # the pre-commit hook — thousands of violations broke the release lint job
+    # (green locally, red in CI). Keep this in lockstep with the dev/hook ruff.
+    "ruff==0.15.15",
+    "mypy>=1.0",
+    # --- Golden scenario YAML (US-101) ---
+    "PyYAML>=6.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["aitao*"]
+
+[project.scripts]
+aitao = "aitao.cli.main:app"
+
+[tool.black]
+line-length = 120
+target-version = ["py314"]
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+    \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+)/
+'''
+
+[tool.ruff]
+line-length = 120
+target-version = "py314"
+extend-exclude = [".git", ".venv", "build", "dist"]
+
+[tool.mypy]
+python_version = "3.14"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+markers = [
+    "slow: marks tests as slow (deselect with '-m not slow')",
+    "integration: marks tests as integration tests",
+    "requires_meilisearch: marks tests that need Meilisearch running",
+    "heavy: needs the AI model / LanceDB native / Meilisearch (skipped by CI gate)",
+    "live_store: read-only smoke test allowed to hit the PROD store (opts out of the US-088 prod-store guard)",
+    "stops_server: stops/restarts the REAL API server (I-14) — opt-in via AITAO_ALLOW_STOPS_SERVER=true",
+    "golden_live: US-101 live golden bench against the real running API/model, skips cleanly when unreachable",
+]
