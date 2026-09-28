@@ -24,7 +24,7 @@ _AITAO_VENVS_BASE="${HOME}/.local/share/venvs"
 # ensure_python_env <project_dir>
 #
 #   Creates or validates the venv for the project.
-#   Python version read from <project_dir>/.python-version, default 3.14.3.
+#   Python version read from <project_dir>/.python-version, default 3.14.
 #   Exports AITAO_VENV_DIR.
 #   Warns if a legacy .venv exists inside the project (cloud waste).
 # ---------------------------------------------------------------------------
@@ -35,7 +35,7 @@ ensure_python_env() {
     local venv_dir="${_AITAO_VENVS_BASE}/${project_name}"
 
     # Resolve Python version
-    local python_version="3.14.3"
+    local python_version="3.14"
     if [ -f "${project_dir}/.python-version" ]; then
         python_version="$(tr -d '[:space:]' < "${project_dir}/.python-version")"
     fi
@@ -60,7 +60,12 @@ ensure_python_env() {
     if $needs_setup; then
         echo "⚙️  Création de l'environnement Python ${python_version}..."
         mkdir -p "${_AITAO_VENVS_BASE}"
-        uv venv --python "${python_version}" "${venv_dir}" || {
+        # --python-preference only-managed: use uv's own Python builds (downloaded
+        # if needed) and never inspect interpreters found on PATH. Without it, a
+        # pyenv shim that lacks the requested version makes uv abort, and AiTao
+        # cannot be installed on a machine that has pyenv (found 2026-09-29 by a
+        # clean-install run of the customer procedure).
+        uv venv --python "${python_version}" --python-preference only-managed "${venv_dir}" || {
             echo -e "${RED:-}❌ Échec création venv (Python ${python_version} disponible ?)${NC:-}"
             return 1
         }
