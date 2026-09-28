@@ -35,6 +35,9 @@ permissions:
 jobs:
   sign-off:
     name: Every commit is signed off
+    # Dependabot only bumps a dependency version number: there is no authored
+    # contribution to license, and a bot cannot sign off anyway.
+    if: github.event.pull_request.user.login != 'dependabot[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

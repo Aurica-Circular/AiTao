@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+# Copyright (C) 2025-2026 Philippe BERTIERI
+# SPDX-License-Identifier: AGPL-3.0-only
+#
+# Pre-push hook for AiTao
+#
+# Refuses to push any branch or tag whose history does not start from the
+# remote's own root commit.
+#
+# Why: the public repository was restarted from a fresh history at 5.0.0. The
+# author's local clone still holds the earlier history, which contained code
+# that must never be published. A slip such as `git push --all` or
+# `git push --tags` would publish it. A contributor's clone always shares the
+# public root commit, so this check never gets in their way.
+#
+# To install: git config core.hooksPath .githooks
+
+remote="$1"
+remote_main="refs/remotes/${remote}/main"
+
+# Remote main unknown (first push, or never fetched): nothing to compare with.
+if ! git rev-parse -q --verify "$remote_main" >/dev/null; then
+    exit 0
+fi
+
+public_roots=$(git rev-list --max-parents=0 "$remote_main" | sort)
+status=0
+
+while read -r local_ref local_sha remote_ref _remote_sha; do
+    # A deletion is announced with an all-zero sha: nothing to check.
+    case "$local_sha" in *[!0]*) ;; *) continue ;; esac
+
+    # Tags point to tag objects: peel them down to the commit.
+    commit=$(git rev-parse -q --verify "${local_sha}^{commit}") || continue
+    roots=$(git rev-list --max-parents=0 "$commit" | sort)
+
+    if [ "$roots" != "$public_roots" ]; then
+        echo "❌ pre-push: refusing to push ${local_ref} → ${remote_ref}" >&2
+        echo "   Its history does not start from the root commit of '${remote}'." >&2
+        echo "   It probably comes from the pre-5.0.0 history, which must stay private." >&2
+        status=1
+    fi
+done
+
+exit $status
