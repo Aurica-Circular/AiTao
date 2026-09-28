@@ -331,6 +331,18 @@ your indexed documents is free, and stays free.
 
 Purchase a key at https://auricacircular.com.
 
+### Network access
+
+AiTao Core never downloads anything on its own. The Premium module makes one
+outbound request of its own: at most once every 24 hours, it checks a small
+public, signed list of cancelled licence keys, so a leaked key can be
+deactivated even though verification itself is fully offline. That check
+sends nothing about you, your machine, or your documents — no identifying
+header, no query string — and if the request fails (no network, the list is
+unreachable), AiTao silently keeps working exactly as before. Offline use is
+fully supported: Core and an already-activated Premium licence both keep
+working with no network at all.
+
 ---
 
 ## 9. Use AiTao with AI assistants (MCP)

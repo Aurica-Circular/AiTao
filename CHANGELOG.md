@@ -10,6 +10,12 @@ starting from version `2.5.1`.
 
 ## [Unreleased]
 
+### Added
+- Licence keys can now be cancelled (US-141): AiTao Premium checks a public,
+  signed revocation list once a day at most, sending nothing about the user
+  or their documents. `aitao license status` shows a calm, dedicated panel
+  when the installed key has been deactivated.
+
 ### Changed
 - Premium now requires a valid, non-expired licence key in every case — the
   pre-commercial "beta mode" shortcut (`AITAO_BETA=true` / config

@@ -84,6 +84,24 @@ class TestLicenseStatusStates:
         assert result.exit_code == 0
         assert "invalid" in result.stdout.lower()
 
+    def test_revoked(self, monkeypatch):
+        """US-141: a revoked key gets its own calm, non-accusatory panel —
+        distinct from "invalid" (bad signature) and "expired" (past date)."""
+        result = _run_status(
+            monkeypatch,
+            {
+                "status": "revoked",
+                "tier": "premium",
+                "exp": "2027-12-31",
+                "label": "leaked-key",
+            },
+        )
+        assert result.exit_code == 0
+        assert "deactivated" in result.stdout
+        assert "support@auricacircular.com" in result.stdout
+        assert "unaffected" in result.stdout
+        assert "Core" in result.stdout
+
     def test_no_beta_branch_left(self, monkeypatch):
         """The old signal ("Premium (beta)" edition) must no longer be
         special-cased anywhere — "status" alone drives the CLI now."""

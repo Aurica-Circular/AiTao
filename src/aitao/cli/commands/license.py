@@ -91,8 +91,9 @@ def status():
 
     One clear panel per state: the Premium module not installed at all, the
     module installed but no key, an active key (label, end date, days left),
-    an expired key (a warm, non-guilt-inducing message), or an invalid key
-    (bad signature or malformed).
+    an expired key (a warm, non-guilt-inducing message), a revoked key
+    (US-141 — calm, no accusation), or an invalid key (bad signature or
+    malformed).
     """
     from aitao.core.license import LicenseManager
 
@@ -133,6 +134,18 @@ def status():
             "[cyan]support@auricacircular.com[/cyan]",
             title="AiTao — License",
             border_style="yellow",
+        ))
+        return
+
+    if state == "revoked":
+        console.print(Panel(
+            "[bold red]This AiTao Premium key has been deactivated.[/bold red]\n\n"
+            "If you think this is a mistake, please contact "
+            "[cyan]support@auricacircular.com[/cyan] — your documents and all "
+            "Core features are unaffected.\n\n"
+            "Edition: [bold]Core[/bold] (free edition)",
+            title="AiTao — License",
+            border_style="red",
         ))
         return
 
