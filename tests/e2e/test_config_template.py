@@ -36,8 +36,9 @@ ALLOWED_DIFFERENT_VALUES = {
     # [llm.openai] ships commented-out in the template (opt-in, only read when
     # backend = "openai"); a real config using that backend fills it in.
     "llm.openai",
-    # [license] is environment-specific (e.g. beta_mode) and is part of neither
-    # the typed schema (Settings in config_schema.py) nor the shipped template.
+    # [license] would be environment-specific state (e.g. a licence key path
+    # override) and is part of neither the typed schema (Settings in
+    # config_schema.py) nor the shipped template.
     "license",
 }
 

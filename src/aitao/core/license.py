@@ -38,7 +38,7 @@ Usage:
     if LicenseManager().is_premium():
         ...
     LicenseManager().activate("AITAO-xxx.yyy")     # install a key (Premium only)
-    LicenseManager().get_info()                     # {'tier':'premium','exp':'...', ...}
+    LicenseManager().get_info()                     # {'status': 'active', 'tier': 'premium', 'exp': '...', 'label': '...', 'days_left': ...}
 """
 
 from __future__ import annotations
@@ -52,16 +52,23 @@ _PREMIUM_INFO_URL = "https://auricacircular.com"
 # ---------------------------------------------------------------------------
 
 class PremiumFeatureError(RuntimeError):
-    """Raised when a Premium feature is accessed without a valid license."""
+    """Raised when a Premium feature is accessed without a valid license.
 
-    def __init__(self, feature: str) -> None:
+    ``message``, when given, replaces the default text entirely — used by an
+    installed Premium provider to surface its own, licence-state-specific
+    message (no key / invalid key / expired key) instead of this generic one.
+    """
+
+    def __init__(self, feature: str, message: str | None = None) -> None:
         self.feature = feature
-        super().__init__(
-            f"'{feature}' is a Premium feature.\n"
-            "Install a license key to unlock it:\n"
-            "  ./aitao.sh license activate <YOUR-KEY>\n"
-            f"Purchase: {_PREMIUM_INFO_URL}"
-        )
+        if message is None:
+            message = (
+                f"'{feature}' is a Premium feature.\n"
+                "Install a license key to unlock it:\n"
+                "  ./aitao.sh license activate <YOUR-KEY>\n"
+                f"Purchase: {_PREMIUM_INFO_URL}"
+            )
+        super().__init__(message)
 
 
 # ---------------------------------------------------------------------------
@@ -106,9 +113,24 @@ class LicenseManager:
         return provider.is_premium()
 
     def require_premium(self, feature: str) -> None:
-        """Raise PremiumFeatureError if the feature is not accessible."""
-        if not self.is_premium():
-            raise PremiumFeatureError(feature)
+        """Raise PremiumFeatureError if the feature is not accessible.
+
+        Delegates entirely to the installed provider's own
+        ``require_premium()`` so its licence-state-specific message (no key
+        installed / an invalid key / an expired key, each with its own
+        wording) reaches the caller. Without a provider installed there is
+        no licence decision to delegate to: raise directly here, pointing at
+        the missing Premium module itself — never "install a license key",
+        which would be misleading when there is no module to accept one.
+        """
+        provider = self._provider()
+        if provider is None:
+            raise PremiumFeatureError(
+                feature,
+                "This feature requires the AiTao Premium module, which is "
+                f"not installed. See {_PREMIUM_INFO_URL} to obtain it.",
+            )
+        provider.require_premium(feature)
 
     @staticmethod
     def is_premium_extension(ext: str) -> bool:

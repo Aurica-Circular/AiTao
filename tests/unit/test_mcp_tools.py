@@ -153,14 +153,17 @@ class TestPremiumGuard:
             with pytest.raises(PermissionError, match="Premium license"):
                 mod.require_premium("ocr")
 
-    def test_require_premium_fallback_on_import_error(self):
-        """In dev mode (core.license missing), should silently pass."""
+    def test_require_premium_fails_closed_on_import_error(self):
+        """US-140: a broken install (core.license unimportable) must fail
+        CLOSED — never silently unlock a Premium feature. This used to be a
+        "dev mode" fallback that allowed it through; that was itself a
+        licence bypass."""
         with patch.dict("sys.modules", {"aitao.core.license": None}):
             import importlib
             import aitao.mcp_server.tools._premium as mod
             importlib.reload(mod)
-            # Should not raise — ImportError caught, dev mode fallback
-            mod.require_premium("test_feature")
+            with pytest.raises(PermissionError, match="Premium license"):
+                mod.require_premium("test_feature")
 
 
 # ============================================================================

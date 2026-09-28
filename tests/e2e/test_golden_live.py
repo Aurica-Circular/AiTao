@@ -13,7 +13,7 @@
 #
 # Run manually before a release, against Phil's real stack:
 #
-#   AITAO_BETA=true ~/.local/share/venvs/aitao/bin/python -m pytest \
+#   ~/.local/share/venvs/aitao/bin/python -m pytest \
 #       tests/e2e/test_golden_live.py -v -m golden_live
 #
 # Skips cleanly (collection-time skipif) when the API is not reachable — never

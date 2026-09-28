@@ -31,7 +31,6 @@
 # Requires Meilisearch + the bge-m3 embedding model -> slow + requires_meilisearch,
 # run by the dedicated golden CI job, not the fast release gate.
 
-import os
 import sys
 from pathlib import Path
 from typing import Dict, List
@@ -59,9 +58,6 @@ def golden_rag(meilisearch_test_available):
     if not meilisearch_test_available:
         pytest.skip("Meilisearch not available")
 
-    _beta = os.environ.get("AITAO_BETA")
-    os.environ["AITAO_BETA"] = "true"
-
     from aitao.core.config import get_config
     from aitao.core.logger import get_logger
     from golden.corpus_fixture import index_corpus
@@ -81,11 +77,6 @@ def golden_rag(meilisearch_test_available):
     rag.distill_query = False
 
     yield rag
-
-    if _beta is None:
-        os.environ.pop("AITAO_BETA", None)
-    else:
-        os.environ["AITAO_BETA"] = _beta
 
 
 def _committed_scenarios() -> List[Scenario]:

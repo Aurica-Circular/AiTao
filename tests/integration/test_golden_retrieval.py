@@ -16,7 +16,6 @@
 # Requires Meilisearch + the embedding model → marked slow + requires_meilisearch;
 # excluded from the light release gate, run by the dedicated golden CI job.
 
-import os
 from pathlib import Path
 
 import pytest
@@ -45,10 +44,6 @@ def golden_rag(meilisearch_test_available):
     """Index the golden corpus into isolated stores and yield a RAGEngine."""
     if not meilisearch_test_available:
         pytest.skip("Meilisearch not available")
-
-    # Premium gate (RAGEngine requires it); restored after the module runs.
-    _beta = os.environ.get("AITAO_BETA")
-    os.environ["AITAO_BETA"] = "true"
 
     import sys
 
@@ -101,11 +96,6 @@ def golden_rag(meilisearch_test_available):
     rag.distill_query = False
 
     yield rag
-
-    if _beta is None:
-        os.environ.pop("AITAO_BETA", None)
-    else:
-        os.environ["AITAO_BETA"] = _beta
 
 
 def _top_anchored_path(context) -> str:

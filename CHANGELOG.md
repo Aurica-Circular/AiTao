@@ -8,6 +8,25 @@ starting from version `2.5.1`.
 
 ---
 
+## [Unreleased]
+
+### Changed
+- Premium now requires a valid, non-expired licence key in every case — the
+  pre-commercial "beta mode" shortcut (`AITAO_BETA=true` / config
+  `beta_mode`, on by default) is gone; nothing unlocks Premium without a real
+  key (US-140).
+- `aitao license status` shows one clear panel per licence state (module not
+  installed, module installed with no key, active — label/end date/days
+  left, expired, invalid) instead of the old "Beta mode active" branch.
+- An expired licence key now raises a clear, warm message (not a bare
+  refusal): it names the label and end date, thanks the person for testing,
+  confirms their documents and index are untouched and Core keeps working,
+  and points at how to continue with Premium.
+
+### Removed
+- The `AITAO_BETA` environment variable and the `[license] beta_mode` config
+  flag — neither is read anywhere in the core or the Premium module anymore.
+
 ## [5.0.0] - 2026-09-28
 
 > First release published from the Aurica Circular repository; AiTao Premium modules

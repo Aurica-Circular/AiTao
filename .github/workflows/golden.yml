@@ -43,8 +43,6 @@ jobs:
         env:
           MEILI_ENV: development          # no master key required for tests
           MEILI_NO_ANALYTICS: "true"
-    env:
-      AITAO_BETA: "true"                  # unlock Premium (RAGEngine) without a key
     steps:
       - uses: actions/checkout@v4
 

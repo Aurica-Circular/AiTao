@@ -87,22 +87,17 @@ def activate(
 
 @app.command()
 def status():
-    """Show the status of the installed license."""
+    """Show the status of the installed license.
+
+    One clear panel per state: the Premium module not installed at all, the
+    module installed but no key, an active key (label, end date, days left),
+    an expired key (a warm, non-guilt-inducing message), or an invalid key
+    (bad signature or malformed).
+    """
     from aitao.core.license import LicenseManager
 
     lm = LicenseManager()
-    edition = lm.edition()
     info = lm.get_info()
-
-    if edition == "Premium (beta)":
-        console.print(Panel(
-            "[bold cyan]Beta mode active[/bold cyan]\n\n"
-            "All Premium features are accessible without a license key.\n"
-            "This mode will be disabled at commercial launch.",
-            title="AiTao — License",
-            border_style="cyan",
-        ))
-        return
 
     if not info.get("premium_module_installed", True):
         console.print(Panel(
@@ -115,24 +110,53 @@ def status():
         ))
         return
 
-    if info.get("tier"):
+    state = info.get("status")
+
+    if state == "active":
         table = Table(box=box.SIMPLE, show_header=False, padding=(0, 2))
         table.add_column("Field", style="bold")
         table.add_column("Value")
-        table.add_row("Edition", f"[green]{edition}[/green]")
-        table.add_row("Tier", info.get("tier", "?"))
-        table.add_row("Valid until", info.get("exp", "?"))
+        table.add_row("Edition", "[green]Premium[/green]")
         table.add_row("Label", info.get("label", "?"))
+        table.add_row("Valid until", info.get("exp", "?"))
+        table.add_row("Days left", str(info.get("days_left", "?")))
         console.print(Panel(table, title="AiTao — License", border_style="green"))
-    else:
+        return
+
+    if state == "expired":
         console.print(Panel(
-            "[yellow]No license installed.[/yellow]\n\n"
-            "Edition: [bold]Core[/bold] (free edition)\n\n"
-            "To activate Premium:\n"
-            "  [green]./aitao.sh license activate AITAO-xxx.yyy[/green]",
+            f"[bold yellow]Your AiTao Premium key ({info.get('label', '?')}) ended on "
+            f"{info.get('exp', '?')}.[/bold yellow]\n\n"
+            "Thank you for testing AiTao! Your documents and your index are untouched\n"
+            "and all Core features keep working.\n\n"
+            "To continue with Premium: [cyan]https://auricacircular.com[/cyan] — "
+            "[cyan]support@auricacircular.com[/cyan]",
             title="AiTao — License",
             border_style="yellow",
         ))
+        return
+
+    if state == "invalid":
+        console.print(Panel(
+            "[red]The installed license key is invalid[/red] (bad signature or malformed).\n\n"
+            "Edition: [bold]Core[/bold] (free edition)\n\n"
+            "Activate a valid key:\n"
+            "  [green]aitao license activate <key-file>[/green]\n\n"
+            "See [cyan]https://auricacircular.com[/cyan] for a license.",
+            title="AiTao — License",
+            border_style="red",
+        ))
+        return
+
+    # state == "none"
+    console.print(Panel(
+        "[yellow]No license installed.[/yellow]\n\n"
+        "Edition: [bold]Core[/bold] (free edition)\n\n"
+        "To activate Premium:\n"
+        "  [green]aitao license activate <key-file>[/green]",
+        title="AiTao — License",
+        border_style="yellow",
+    ))
 
 
 @app.command()
@@ -141,8 +165,8 @@ def deactivate():
     from aitao.core.license import LicenseManager
 
     lm = LicenseManager()
-    if not lm.get_info().get("tier"):
-        console.print("[yellow]No active license to remove.[/yellow]")
+    if lm.get_info().get("status", "none") == "none":
+        console.print("[yellow]No license to remove.[/yellow]")
         return
 
     confirm = typer.confirm("Remove the Premium license? (reverts to Core edition)")

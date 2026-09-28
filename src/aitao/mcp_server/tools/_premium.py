@@ -16,16 +16,17 @@ def require_premium(feature: str) -> None:
         feature: Internal feature name shown in error messages.
 
     Raises:
-        PermissionError: When license is insufficient.
+        PermissionError: When the license is insufficient, or when the core
+            licensing module cannot even be imported (US-140: a broken
+            install must fail CLOSED — never silently unlock a Premium
+            feature. There used to be a "development mode" fallback here
+            that did the opposite; that was itself a bypass).
     """
     try:
         from aitao.core.license import LicenseManager  # type: ignore
         LicenseManager().require_premium(feature)
-    except ImportError:
-        # License module not available — allow (development mode)
-        pass
     except Exception as exc:
-        # Covers PremiumFeatureError or any other license error
+        # Covers PremiumFeatureError, ImportError, or any other license error
         raise PermissionError(
             f"Feature '{feature}' requires an AiTao Premium license. {exc}"
         ) from exc

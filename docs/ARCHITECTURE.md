@@ -128,9 +128,11 @@ stdout is the protocol wire.
   via `get_config()`.
 - `models.py` — canonical domain entities as Pydantic v2 (`Document`, `ChatMessage` / `ChatRole`).
   A missing or mistyped field raises `ValidationError` at construction, not a `KeyError` later.
-- `license.py` — RSA-SHA256 **offline** license validation. `LicenseManager().require_premium(...)`
+- `license.py` — thin facade; the actual RSA-SHA256 **offline** license validation lives in the
+  separately distributed `aitao-premium` package. `LicenseManager().require_premium(...)`
   gates Premium features (`advanced_formats`, `ocr_advanced`, `extraction`). RAG
-  chat over text documents is **Core** (PRD §5). `AITAO_BETA=true` bypasses checks during beta.
+  chat over text documents is **Core** (PRD §5). Premium requires a valid, non-expired
+  license key — there is no bypass (US-140).
 - `logger.py` — structured logging via `get_logger(...)`; no `print()` in `src/`.
 - `pathmanager.py` — runtime paths (`~/.aitao/...`).
 - `registry.py` — shared **constants and keys** only (`ConfigKeys`, `StatsKeys`, `APIEndpoints`,
