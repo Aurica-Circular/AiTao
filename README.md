@@ -329,7 +329,8 @@ your indexed documents is free, and stays free.
 ./aitao.sh license activate YOUR-LICENSE-KEY
 ```
 
-Purchase a key at https://auricacircular.com.
+Pricing: https://auricacircular.com/en/products/aitao/ — request a licence key via the
+contact form: https://auricacircular.com/en/contact/ (or support@auricacircular.com).
 
 ### Network access
 

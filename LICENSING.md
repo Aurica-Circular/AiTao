@@ -63,7 +63,7 @@ The commercial license is a separate written agreement between Aurica Circular C
 and the customer. Its terms — including warranty, liability and support — are set out in that
 agreement and are not affected by this document.
 
-**Purchase and terms:** https://auricacircular.com — **Contact:** support@auricacircular.com
+**Pricing and licence requests:** https://auricacircular.com/en/products/aitao/ — **Contact:** support@auricacircular.com
 
 ## 4. Name and branding
 
